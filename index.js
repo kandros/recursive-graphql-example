@@ -91,7 +91,7 @@ const resolvers = {
     idWithEmoji(parent) {
       return `${parent.id}-🎁`
     },
-    childrens: (parent, /* an Item without children field {id: Int, childrens: Int} */ args, context) => {
+    childrens: (parent, /* an Item with children field {id: Int, childrens: Int[]} */ args, context) => {
       const cs = parent.childrens.map(getItemById)
       if (args.onlyChildrensWithChildrens) {
         return cs.filter(c => {
