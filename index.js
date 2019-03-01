@@ -15,7 +15,7 @@ function getItemById(id) {
 const typeDefs = gql`
   type Item {
     id: Int!
-    childrens: [Item!]!
+    childrens(onlyChildrensWithChildrens: Boolean): [Item!]!
     anotherField: AnotherField!
     idWithEmoji: String!
     childrensCount: Int!
@@ -23,7 +23,9 @@ const typeDefs = gql`
   }
 
   type AnotherField {
+    username: String!
     valid: Boolean!
+    queryInfo: Boolean
   }
 
   input CreateItemInput {
@@ -33,7 +35,7 @@ const typeDefs = gql`
 
   type Query {
     getItemById(id: Int!): Item
-    getItems: [Item!]!
+    getItems(onlyWithChildrens: Boolean): [Item!]!
   }
 
   type Mutation {
@@ -43,8 +45,14 @@ const typeDefs = gql`
 
 const resolvers = {
   Query: {
-    getItems: () => {
-      return items
+    getItems: (parent, args, context) => {
+      const i = items
+      if (args.onlyWithChildrens) {
+        return i.filter(c => {
+          return c.childrens.length > 0
+        })
+      }
+      return i
     },
     getItemById: (_parent, { id }) => {
       return getItemById(id)
@@ -63,6 +71,12 @@ const resolvers = {
     valid() {
       return true
     },
+    username(parent, args, context, info) {
+      return context.user.name
+    },
+    queryInfo(parent, args, context, info) {
+      return
+    },
   },
   Item: {
     childrensCount(parent, args, context) {
@@ -79,6 +93,11 @@ const resolvers = {
     },
     childrens: (parent, /* an Item without children field {id: Int, childrens: Int} */ args, context) => {
       const cs = parent.childrens.map(getItemById)
+      if (args.onlyChildrensWithChildrens) {
+        return cs.filter(c => {
+          return c.childrens.length > 0
+        })
+      }
       return cs
     },
   },
